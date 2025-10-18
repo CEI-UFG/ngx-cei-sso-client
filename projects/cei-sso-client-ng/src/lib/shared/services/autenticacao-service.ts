@@ -4,7 +4,6 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, BehaviorSubject, of, throwError } from 'rxjs';
 import { tap, catchError } from 'rxjs/operators';
 import { ConfiguracaoSegurancaService } from '../configuracao-seguranca-service';
-// import { CONFIG_TOKEN, SecurityConfig } from './security-config.model';
 
 @Injectable({
   providedIn: 'root'
@@ -29,7 +28,7 @@ export class AutenticacaoService {
 
   login(credentials: any): Observable<any> {
     // Usando as URLs do ConfigService (que simula o ambiente)
-    const url = `${this.configuracaoSegurancaService.getSsoBaseUrl()}${this.configuracaoSegurancaService.getLoginUrl()}`;
+    const url = `${this.configuracaoSegurancaService.getUrlBase()}${this.configuracaoSegurancaService.getUrlLogin()}`;
 
     // ... [Resto da lógica de login permanece a mesma] ...
     return this.http.post<{ token: string }>(url, credentials).pipe(
@@ -50,8 +49,8 @@ export class AutenticacaoService {
 
   logout(): Observable<any> {
     // Usando as URLs do ConfigService
-    const url = `${this.configuracaoSegurancaService.getSsoBaseUrl()}${this.configuracaoSegurancaService.getLogoutUrl()}`;
-    const redirectUri = this.configuracaoSegurancaService.getPostLogoutRedirectUri();
+    const url = `${this.configuracaoSegurancaService.getUrlBase()}${this.configuracaoSegurancaService.getUrlLogout()}`;
+    const redirectUri = this.configuracaoSegurancaService.getRedirectUriPosLogout();
     
     return this.http.post(url, {}).pipe(
       catchError(error => of(null)), 

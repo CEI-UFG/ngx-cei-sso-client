@@ -10,24 +10,24 @@ export abstract class ConfiguracaoSegurancaService {
    * Retorna a URL base do servidor de Single Sign-On (SSO).
    * Ex: 'https://api.meusistema.com'
    */
-  abstract getSsoBaseUrl(): string;
+  abstract getUrlBase(): string;
   
   /**
    * Retorna o caminho do endpoint de Login.
    * Ex: '/auth/login'
    */
-  abstract getLoginUrl(): string;
+  abstract getUrlLogin(): string;
   
   /**
    * Retorna o caminho do endpoint de Logout.
    * Ex: '/auth/logout'
    */
-  abstract getLogoutUrl(): string;
+  abstract getUrlLogout(): string;
   
   /**
    * Retorna o URL completa para onde o usuário deve ser redirecionado após o logout.
    * Ex: 'http://localhost:4200/login'
    */
-  abstract getPostLogoutRedirectUri(): string;
+  abstract getRedirectUriPosLogout(): string;
 }
 

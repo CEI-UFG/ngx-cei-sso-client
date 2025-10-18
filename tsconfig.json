@@ -5,7 +5,7 @@
   "compilerOptions": {
     "paths": {
       "cei-sso-client-ng": [
-        "./dist/cei-sso-client-ng"
+        "./dist/cei-sso-client"
       ]
     },
     "strict": true,
