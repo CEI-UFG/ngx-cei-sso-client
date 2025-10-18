@@ -85,6 +85,32 @@
           }
         }
       }
+    },
+    "cei-sso-client-ng": {
+      "projectType": "library",
+      "root": "projects/cei-sso-client-ng",
+      "sourceRoot": "projects/cei-sso-client-ng/src",
+      "prefix": "lib",
+      "architect": {
+        "build": {
+          "builder": "@angular/build:ng-packagr",
+          "configurations": {
+            "production": {
+              "tsConfig": "projects/cei-sso-client-ng/tsconfig.lib.prod.json"
+            },
+            "development": {
+              "tsConfig": "projects/cei-sso-client-ng/tsconfig.lib.json"
+            }
+          },
+          "defaultConfiguration": "production"
+        },
+        "test": {
+          "builder": "@angular/build:karma",
+          "options": {
+            "tsConfig": "projects/cei-sso-client-ng/tsconfig.spec.json"
+          }
+        }
+      }
     }
   }
 }
