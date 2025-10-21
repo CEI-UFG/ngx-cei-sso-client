@@ -4,9 +4,13 @@
   "compileOnSave": false,
   "compilerOptions": {
     "paths": {
-      "cei-sso-client-ng": [
-        "./dist/cei-sso-client"
-      ]
+      "cei-sso-client": [
+        "./dist/cei_sso_client"
+      ],
+      "arquitetura-cei-frontend": [
+        "../arquitetura_cei_frontend/dist/arquitetura-cei-frontend"
+      ],
+     
     },
     "strict": true,
     "noImplicitOverride": true,
@@ -30,16 +34,10 @@
   "files": [],
   "references": [
     {
-      "path": "./tsconfig.app.json"
+      "path": "./projects/cei-sso-client/tsconfig.lib.json"
     },
     {
-      "path": "./tsconfig.spec.json"
-    },
-    {
-      "path": "./projects/cei-sso-client-ng/tsconfig.lib.json"
-    },
-    {
-      "path": "./projects/cei-sso-client-ng/tsconfig.spec.json"
+      "path": "./projects/cei-sso-client/tsconfig.spec.json"
     }
   ]
 }
