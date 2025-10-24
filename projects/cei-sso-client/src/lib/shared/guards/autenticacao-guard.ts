@@ -2,7 +2,7 @@ import { inject } from '@angular/core';
 import { CanActivateFn } from '@angular/router';
 import { AutenticacaoService } from '../services/autenticacao-service';
 import { map } from 'rxjs';
-import { Router } from 'express';
+import { Router } from '@angular/router';
 
 
 export const autenticacaoGuard: CanActivateFn = (route, state) => {
@@ -11,7 +11,7 @@ export const autenticacaoGuard: CanActivateFn = (route, state) => {
 // Verifica o estado de autenticação do serviço (baseado na presença do token)
 
 // O AuthGuard usa o estado de autenticação reativo (Observable) do AuthService
-  return autenticacaoService.isAutenticado$.pipe(
+  return autenticacaoService?.isAutenticado$.pipe(
     map(isAutenticado => {
       if (isAutenticado) {
         // 1. USUÁRIO AUTENTICADO: Permite o acesso à rota
