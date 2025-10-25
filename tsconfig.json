@@ -3,6 +3,12 @@
 {
   "compileOnSave": false,
   "compilerOptions": {
+    "paths": {
+      // "ngx-cei-sso-client": [
+      //   "./dist/ngx-cei-sso-client"
+      // ],
+    
+    },
     "strict": true,
     "noImplicitOverride": true,
     "noPropertyAccessFromIndexSignature": true,
@@ -25,10 +31,10 @@
   "files": [],
   "references": [
     {
-      "path": "./tsconfig.app.json"
+      "path": "./projects/ngx-cei-sso-client/tsconfig.lib.json"
     },
     {
-      "path": "./tsconfig.spec.json"
+      "path": "./projects/ngx-cei-sso-client/tsconfig.spec.json"
     }
   ]
 }

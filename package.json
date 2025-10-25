@@ -1,5 +1,5 @@
 {
-  "name": "cei-sso-client-ng",
+  "name": "ngx-cei-sso-client",
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
@@ -7,7 +7,7 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "serve:ssr:cei_sso_client_ng": "node dist/cei_sso_client_ng/server/server.mjs"
+    "serve:ssr:ngx-cei-sso-client_ng": "node dist/ngx-cei-sso-client/server/server.mjs"
   },
   "prettier": {
     "printWidth": 100,
@@ -48,6 +48,7 @@
     "karma-coverage": "~2.2.0",
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.1.0",
+    "ng-packagr": "^20.3.0",
     "typescript": "~5.9.2"
   }
 }
