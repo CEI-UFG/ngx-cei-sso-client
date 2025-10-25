@@ -3,20 +3,20 @@
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "cei-sso-client": {
+    "ngx-cei-sso-client": {
       "projectType": "library",
-      "root": "projects/cei-sso-client",
-      "sourceRoot": "projects/cei-sso-client/src",
+      "root": "projects/ngx-cei-sso-client",
+      "sourceRoot": "projects/ngx-cei-sso-client/src",
       "prefix": "lib",
       "architect": {
         "build": {
           "builder": "@angular/build:ng-packagr",
           "configurations": {
             "production": {
-              "tsConfig": "projects/cei-sso-client/tsconfig.lib.prod.json"
+              "tsConfig": "projects/ngx-cei-sso-client/tsconfig.lib.prod.json"
             },
             "development": {
-              "tsConfig": "projects/cei-sso-client/tsconfig.lib.json"
+              "tsConfig": "projects/ngx-cei-sso-client/tsconfig.lib.json"
             }
           },
           "defaultConfiguration": "production"
@@ -24,7 +24,7 @@
         "test": {
           "builder": "@angular/build:karma",
           "options": {
-            "tsConfig": "projects/cei-sso-client/tsconfig.spec.json"
+            "tsConfig": "projects/ngx-cei-sso-client/tsconfig.spec.json"
           }
         }
       }
