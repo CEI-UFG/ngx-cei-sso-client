@@ -49,7 +49,7 @@ export class AutenticacaoService {
     return null;
   }
 
-  private setToken(token: string): void {
+  private setToken(token: any): void {
     if (this.isBrowser) {
       localStorage?.setItem('auth_token', token);
     }
@@ -66,11 +66,12 @@ export class AutenticacaoService {
   // ----------------------
 
   login(credentials: any): Observable<any> {
-    const url = `${this.configuracaoSeguranca?.urlBase}${this.configuracaoSeguranca?.urlLogin}`; // Acesso direto às propriedades
+
+    const url = `${this.configuracaoSeguranca?.urlBase}${this.configuracaoSeguranca?.pathLogin}`; // Acesso direto às propriedades
     
-    return this.http.post<{ token: string }>(url, credentials).pipe(
+    return this.http.post<any>(url, credentials).pipe(
         tap(response => {
-            const token = response.token; 
+            const token = response; 
             if (token) {
                 // Chama o método seguro
                 this.setToken(token); 
@@ -86,7 +87,7 @@ export class AutenticacaoService {
   }
 
   logout(): Observable<any> {
-    const url = `${this.configuracaoSeguranca?.urlBase}${this.configuracaoSeguranca?.urlLogout}`; // Acesso direto às propriedades
+    const url = `${this.configuracaoSeguranca?.urlBase}${this.configuracaoSeguranca?.pathLogout}`; // Acesso direto às propriedades
     const redirectUri = this.configuracaoSeguranca?.redirectUriPosLogout; // Acesso direto às propriedades
 
     return this.http.post(url, {}).pipe(

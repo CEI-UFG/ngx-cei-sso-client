@@ -10,13 +10,13 @@ export interface ConfiguracaoSSO {
     * Retorna o caminho do endpoint de Login.
     * Ex: '/auth/login'
     */
-    urlLogin: string;
+    pathLogin: string;
   
   /**
    * Retorna o caminho do endpoint de Logout.
    * Ex: '/auth/logout'
    */
-    urlLogout: string;
+    pathLogout: string;
   
   /**
    * Retorna o URL completa para onde o usuário deve ser redirecionado após o logout.
