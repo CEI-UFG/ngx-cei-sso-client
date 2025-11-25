@@ -5,6 +5,10 @@ import { tap, catchError } from 'rxjs/operators';
 import { isPlatformBrowser } from '@angular/common'; // Importe a função essencial
 import { CONFIGURACAO_SSO_INJECTION_TOKEN } from '../constants/configuracao-sso-injection-token';
 import { ConfiguracaoSSO } from '../models/configuracao-sso-model';
+import { ACCESS_TOKEN_MODEL_INJECTION_TOKEN } from '../constants/access-token-injection-token';
+import { IExtratorTokenService } from './extrator-token-service';
+import { EXTRATOR_TOKEN_INJECTION_TOKEN } from '../constants/extrator-token-injection-token';
+
 
 @Injectable({
   providedIn: 'root'
@@ -27,7 +31,8 @@ export class AutenticacaoService {
 
   constructor(
     // Injeta o Token que receberá o objeto de configuração
-    @Inject(CONFIGURACAO_SSO_INJECTION_TOKEN) private configuracaoSeguranca: ConfiguracaoSSO 
+    @Inject(CONFIGURACAO_SSO_INJECTION_TOKEN) private configuracaoSeguranca: ConfiguracaoSSO,
+    @Inject(EXTRATOR_TOKEN_INJECTION_TOKEN) private extratorTokenService: IExtratorTokenService // <-- Injeção via Interface 
   ) { }
   // ----------------------
   // Métodos de LocalStorage
@@ -70,8 +75,8 @@ export class AutenticacaoService {
     const url = `${this.configuracaoSeguranca?.urlBase}${this.configuracaoSeguranca?.pathLogin}`; // Acesso direto às propriedades
     
     return this.http.post<any>(url, credentials).pipe(
-        tap(response => {
-            const token = response; 
+        tap(resposta => {
+            const token = this.extratorTokenService.extrairToken(resposta); 
             if (token) {
                 // Chama o método seguro
                 this.setToken(token); 
