@@ -5,10 +5,9 @@ import { tap, catchError } from 'rxjs/operators';
 import { isPlatformBrowser } from '@angular/common'; // Importe a função essencial
 import { CONFIGURACAO_SSO_INJECTION_TOKEN } from '../constants/configuracao-sso-injection-token';
 import { ConfiguracaoSSO } from '../models/configuracao-sso-model';
-import { ACCESS_TOKEN_MODEL_INJECTION_TOKEN } from '../constants/access-token-injection-token';
-import { IExtratorTokenService } from './extrator-token-service';
-import { EXTRATOR_TOKEN_INJECTION_TOKEN } from '../constants/extrator-token-injection-token';
-
+import { TOKEN_SERVICE_INJECTION_TOKEN } from '../constants/token-service-injection-token';
+import { CREDENCIAIS_PAYLOAD_INJECTION_TOKEN } from '../constants/credenciais-payload-injection-token';
+import { CredenciaisPayLoad } from '../types/credenciais-payload';
 
 @Injectable({
   providedIn: 'root'
@@ -26,60 +25,34 @@ export class AutenticacaoService {
   // (Note que 'localStorage' é uma global no navegador e não precisa ser injetada se
   // o acesso for sempre protegido pela verificação de plataforma)
 
-  private isAutenticadoSubject = new BehaviorSubject<boolean>(this.hasToken());
+  private readonly tokenService = inject(TOKEN_SERVICE_INJECTION_TOKEN);
+  private isAutenticadoSubject = new BehaviorSubject<boolean>(this.tokenService.hasToken());
   public isAutenticado$ = this.isAutenticadoSubject.asObservable();
 
   constructor(
     // Injeta o Token que receberá o objeto de configuração
     @Inject(CONFIGURACAO_SSO_INJECTION_TOKEN) private configuracaoSeguranca: ConfiguracaoSSO,
-    @Inject(EXTRATOR_TOKEN_INJECTION_TOKEN) private extratorTokenService: IExtratorTokenService // <-- Injeção via Interface 
+    // @Inject(EXTRATOR_TOKEN_INJECTION_TOKEN) private tokenService: TokenService // <-- Injeção via Interface 
+    @Inject(CREDENCIAIS_PAYLOAD_INJECTION_TOKEN) private mapearPayloadCredenciais: CredenciaisPayLoad
   ) { }
-  // ----------------------
-  // Métodos de LocalStorage
-  // ----------------------
-
-  private hasToken(): boolean {
-    if (this.isBrowser) {
-      // Acessa localStorage APENAS se estiver no navegador
-      return localStorage?.getItem('auth_token') !== null;
-    }
-    // No servidor (SSR), o token nunca existe
-    return false;
-  }
-
-  getToken(): string | null {
-    if (this.isBrowser) {
-      return localStorage?.getItem('auth_token');
-    }
-    return null;
-  }
-
-  private setToken(token: any): void {
-    if (this.isBrowser) {
-      localStorage?.setItem('auth_token', token);
-    }
-  }
-
-  private removeToken(): void {
-    if (this.isBrowser) {
-      localStorage?.removeItem('auth_token');
-    }
-  }
+  
 
   // ----------------------
   // Métodos de Autenticação
   // ----------------------
 
-  login(credentials: any): Observable<any> {
+  login(credenciais: any): Observable<any> {
+
+    const payloadCredenciais = this.mapearPayloadCredenciais(credenciais);
 
     const url = `${this.configuracaoSeguranca?.urlBase}${this.configuracaoSeguranca?.pathLogin}`; // Acesso direto às propriedades
     
-    return this.http.post<any>(url, credentials).pipe(
+    return this.http.post<any>(url, payloadCredenciais).pipe(
         tap(resposta => {
-            const token = this.extratorTokenService.extrairToken(resposta); 
+            const token = this.tokenService.extrairToken(resposta); 
             if (token) {
                 // Chama o método seguro
-                this.setToken(token); 
+                this.tokenService.setToken(token); 
                 this.isAutenticadoSubject.next(true);
             } else {
                 throw new Error('Token não recebido');
@@ -99,7 +72,7 @@ export class AutenticacaoService {
       catchError(() => of(null)), 
       tap(() => {
         // Chama o método seguro
-        this.removeToken(); 
+        this.tokenService.removeToken(); 
         this.isAutenticadoSubject.next(false);
         
         // O redirecionamento TAMBÉM é uma operação de navegador!

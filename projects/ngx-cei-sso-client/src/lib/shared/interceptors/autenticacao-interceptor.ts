@@ -1,16 +1,20 @@
 // auth.interceptor.ts
-import { Injectable } from '@angular/core';
+import { Inject, Injectable } from '@angular/core';
 import { HttpInterceptor, HttpRequest, HttpHandler, HttpEvent, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { AutenticacaoService } from '../services/autenticacao-service';
+import { TokenService } from '../services/token-service';
+import { TOKEN_SERVICE_INJECTION_TOKEN } from '../constants/token-service-injection-token';
 
 @Injectable()
 export class AutenticacaoInterceptor implements HttpInterceptor {
-  constructor(private autenticacaoService: AutenticacaoService) {}
+  constructor(
+    private autenticacaoService: AutenticacaoService,
+    @Inject(TOKEN_SERVICE_INJECTION_TOKEN) private tokenService: TokenService) {}
 
   intercept(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
-    const token = this.autenticacaoService.getToken();
+    const token = this.tokenService.getToken();
     
     let authRequest = request;
 
