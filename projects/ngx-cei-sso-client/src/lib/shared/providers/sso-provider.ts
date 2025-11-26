@@ -11,7 +11,7 @@ import { AutenticacaoInterceptor } from "../interceptors/autenticacao-intercepto
  * @param config Os parâmetros de configuração de SSO lidos do environment.ts do cliente.
  * @returns Um array de Providers do Angular.
  */
-export function provideSegurancaSSO(config: ConfiguracaoSSO): Provider[] {
+export function provideConfiguracaoSSO(config: ConfiguracaoSSO): Provider[] {
   return [
     AutenticacaoService,
     
