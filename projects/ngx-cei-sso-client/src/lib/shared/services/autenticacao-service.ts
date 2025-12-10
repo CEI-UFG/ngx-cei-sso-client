@@ -82,4 +82,25 @@ export class AutenticacaoService {
       })
     );
   }
+
+  /**
+   * Constrói o URL completo de redirecionamento para o SSO externo.
+   * @param redirectPath O caminho interno para o qual o usuário deve retornar (state.url do Guard).
+   * @returns A URL completa do SSO (ex: http://localhost:8000/login/?redirect_url=...) ou null se não configurado.
+   */
+  getUrlLoginSSO(redirectPath: string): string | null {
+    // Verifica se os componentes necessários para construir a URL externa estão configurados
+    if (this.configuracaoSeguranca?.urlBase && this.configuracaoSeguranca?.pathLogin) {
+      // 1. Constrói a URL base do SSO
+      const ssoBaseUrl = `${this.configuracaoSeguranca.urlBase}${this.configuracaoSeguranca.pathLogin}`;
+      
+      // 2. Codifica o URL de retorno
+      const encodedRedirectUrl = encodeURIComponent(redirectPath); 
+
+      // 3. Retorna a URL completa para redirecionamento externo
+      return `${ssoBaseUrl}?redirect_url=${encodedRedirectUrl}`;
+    }
+    
+    return null; // Retorna null se não houver configuração para SSO externo
+  }
 }

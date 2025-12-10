@@ -19,3 +19,7 @@ export {CREDENCIAIS_PAYLOAD_INJECTION_TOKEN} from './lib/shared/constants/creden
 export type {CredenciaisPayLoad} from './lib/shared/types/credenciais-payload';
 export {provideCredenciaisPayload} from './lib/shared/providers/credenciais-payload-provider';
 export {provideAccessTokenService} from './lib/shared/providers/access-token-provider';
+export {provideConfiguracaoRefreshToken} from './lib/shared/providers/configuracao-refresh-token-provider';
+export {CONFIGURACAO_SOLICITACAO_REFRESH_TOKEN_INJECTION_TOKEN} from './lib/shared/constants/solicitacao-refresh-token-injection-token';
+export type {ConfiguracaoSolicitacaoRefreshToken} from './lib/shared/models/solicitacao-refresh-token-model';
+export {RefreshTokenService} from './lib/shared/services/refresh-token.service';

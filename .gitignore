@@ -43,3 +43,4 @@ __screenshots__/
 Thumbs.db
 
 /projects/cei-sso-client/node_modules
+.aiexclude
