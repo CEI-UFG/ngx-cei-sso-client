@@ -23,3 +23,5 @@ export {provideConfiguracaoRefreshToken} from './lib/shared/providers/configurac
 export {CONFIGURACAO_SOLICITACAO_REFRESH_TOKEN_INJECTION_TOKEN} from './lib/shared/constants/solicitacao-refresh-token-injection-token';
 export type {ConfiguracaoSolicitacaoRefreshToken} from './lib/shared/models/solicitacao-refresh-token-model';
 export {RefreshTokenService} from './lib/shared/services/refresh-token.service';
+export {REQUEST} from './lib/shared/constants/requisicao-ssr-token';
+export {RESPONSE} from './lib/shared/constants/requisicao-ssr-token';

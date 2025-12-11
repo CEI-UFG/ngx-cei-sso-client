@@ -1,55 +1,62 @@
-import { inject, PLATFORM_ID } from '@angular/core';
+import { inject, PLATFORM_ID, Optional } from '@angular/core';
 import { CanActivateFn } from '@angular/router';
 import { AutenticacaoService } from '../services/autenticacao-service';
 import { map } from 'rxjs';
 import { Router } from '@angular/router';
 import { isPlatformBrowser } from '@angular/common';
+import { Response } from 'express';
+import { RESPONSE } from '../constants/requisicao-ssr-token';
 
 
 export const autenticacaoGuard: CanActivateFn = (route, state) => {
-  const platformId = inject(PLATFORM_ID);
 
+  // Injeção de dependências
   const autenticacaoService = inject(AutenticacaoService);
   const router = inject(Router);
-  const isBrowser = isPlatformBrowser(platformId);
+  const platformId = inject(PLATFORM_ID);
+  // O token RESPONSE é injetado opcionalmente. Ele só existirá no servidor.
+  // A importação real virá de 'express', mas o token é fornecido no app.config.server.ts
+  const response: Response | null = inject(RESPONSE, { optional: true });
 
-  return autenticacaoService?.isAutenticado$.pipe(
-    map(isAutenticado => {
+  return autenticacaoService.isAutenticado$.pipe(
+    map((isAutenticado) => {
       if (isAutenticado) {
-        // 1. USUÁRIO AUTENTICADO
-        return true; 
-      } else {
-        // 2. USUÁRIO NÃO AUTENTICADO: LÓGICA HÍBRIDA
-        let urlDeRetorno = state.url; 
-        
-        if (isBrowser) {
-            // Garante que o URL de retorno é absoluto para o servidor de SSO
-            urlDeRetorno = window.location.origin + urlDeRetorno;          
-        }
+        console.log('Usuário autenticado. Acesso permitido.');
+        return true;
+      }
 
-        // Tenta construir a URL de login do SSO externo
-        const ssoLoginUrl = autenticacaoService.getUrlLoginSSO(urlDeRetorno);
+      // Lógica para usuário não autenticado
+      const ssoLoginUrl = autenticacaoService.getUrlLoginSSO(state.url);
 
-        if(ssoLoginUrl) {
-          // FLUXO EXTERNO (SSO)
-          console.log('Tentando redirecionar para:', ssoLoginUrl);
-          if (isBrowser) {
-              window.location.href = ssoLoginUrl; // Redireciona o navegador
+      if (ssoLoginUrl) {
+        console.log('Usuário não autenticado. Redirecionando para SSO.');
+        console.log(`URL de login SSO: ${ssoLoginUrl}`);
+        // FLUXO DE REDIRECIONAMENTO PARA SSO
+        if (isPlatformBrowser(platformId)) {
+          // No navegador: redireciona usando window.location
+          console.log('Client-side: Redirecionando para SSO.');
+          window.location.href = ssoLoginUrl;
+          return false; // Interrompe a navegação do Angular
+        } else {
+          // No servidor: usa o objeto de resposta do Express para enviar um status 302
+          if (response) {
+            console.log('Server-side: Redirecionando para SSO com status 302.');
+            response.redirect(302, ssoLoginUrl);
+          } else {
+            // Fallback caso o 'response' não seja injetado corretamente
+            console.warn('Server-side: Objeto RESPONSE não encontrado. O redirecionamento SSR não ocorrerá.');
           }
-
-          console.log('A navegação foi interrompida');
-
-          
-          return false; // Interrompe a navegação interna do Angular
-
-        }else{
-          // FLUXO INTERNO (Fallback)
-          return router.createUrlTree(['/login'], {
-            queryParams: { 
-              redirect_url: state.url 
-            }
-          });
+          return false; // Interrompe a navegação do Angular
         }
+      } else {
+        // FLUXO DE FALLBACK (sem ssoLoginUrl)
+        // Redireciona para a página de login interna da aplicação
+        console.log('Fallback: Redirecionando para a página de login interna.');
+        return router.createUrlTree(['/login'], {
+          queryParams: {
+            redirect_url: state.url,
+          },
+        });
       }
     })
   );
