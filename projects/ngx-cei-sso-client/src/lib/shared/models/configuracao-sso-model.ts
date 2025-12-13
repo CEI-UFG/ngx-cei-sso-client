@@ -4,7 +4,7 @@ export interface ConfiguracaoSSO {
     * Retorna a URL base do servidor de Single Sign-On (SSO).
     * Ex: 'https://api.meusistema.com'
     */
-    urlBase: string;
+    urlBaseServicoSSO: string;
   
     /**
     * Retorna o caminho do endpoint de Login.
@@ -23,5 +23,11 @@ export interface ConfiguracaoSSO {
    * Ex: 'http://localhost:4200/login'
    */
     redirectUriPosLogout: string;
+
+    /**
+     * Retorna a URL base da aplicação cliente que utiliza o SSO.
+     * Ex: 'http://localhost:4200'
+     */
+    urlBaseAplicacaoCliente?: string;
     
 }

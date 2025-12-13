@@ -2,10 +2,11 @@ import { inject, PLATFORM_ID, Optional } from '@angular/core';
 import { CanActivateFn } from '@angular/router';
 import { AutenticacaoService } from '../services/autenticacao-service';
 import { map } from 'rxjs';
-import { Router } from '@angular/router';
+import { ActivatedRouteSnapshot, Router, RouterStateSnapshot } from '@angular/router';
 import { isPlatformBrowser } from '@angular/common';
 import { Response } from 'express';
 import { RESPONSE } from '../constants/requisicao-ssr-token';
+import { CONFIGURACAO_SSO_INJECTION_TOKEN } from '../constants/configuracao-sso-injection-token';
 
 
 export const autenticacaoGuard: CanActivateFn = (route, state) => {
@@ -17,6 +18,9 @@ export const autenticacaoGuard: CanActivateFn = (route, state) => {
   // O token RESPONSE é injetado opcionalmente. Ele só existirá no servidor.
   // A importação real virá de 'express', mas o token é fornecido no app.config.server.ts
   const response: Response | null = inject(RESPONSE, { optional: true });
+  const configuracaoSSO = inject(CONFIGURACAO_SSO_INJECTION_TOKEN);
+
+  
 
   return autenticacaoService.isAutenticado$.pipe(
     map((isAutenticado) => {
@@ -25,10 +29,22 @@ export const autenticacaoGuard: CanActivateFn = (route, state) => {
         return true;
       }
 
+      // Constrói a URL de redirecionamento completa.
+      let redirectUrl: string;
+      if (isPlatformBrowser(platformId)) {
+        // No navegador, a origem (protocolo, host, porta) está disponível em window.location.
+        redirectUrl = window.location.origin + state.url;
+      } else {
+        // No servidor, não temos window.location.
+        // A melhor prática é configurar a URL base da aplicação como uma variável de ambiente.
+        // Por enquanto, vamos usar um placeholder ou uma URL base fixa.
+        redirectUrl = configuracaoSSO.urlBaseAplicacaoCliente + state.url; // Ou uma URL base do environment: `environment.baseUrl + state.url`
+      }
       // Lógica para usuário não autenticado
-      const ssoLoginUrl = autenticacaoService.getUrlLoginSSO(state.url);
+      const ssoLoginUrl = autenticacaoService.getUrlLoginSSO(redirectUrl);
 
       if (ssoLoginUrl) {
+        console.log('URL de redirecionamento identificada: ' + redirectUrl);
         console.log('Usuário não autenticado. Redirecionando para SSO.');
         console.log(`URL de login SSO: ${ssoLoginUrl}`);
         // FLUXO DE REDIRECIONAMENTO PARA SSO

@@ -45,7 +45,7 @@ export class AutenticacaoService {
 
     const payloadCredenciais = this.mapearPayloadCredenciais(credenciais);
 
-    const url = `${this.configuracaoSeguranca?.urlBase}${this.configuracaoSeguranca?.pathLogin}`; // Acesso direto às propriedades
+    const url = `${this.configuracaoSeguranca?.urlBaseServicoSSO}${this.configuracaoSeguranca?.pathLogin}`; // Acesso direto às propriedades
     
     return this.http.post<any>(url, payloadCredenciais).pipe(
         tap(resposta => {
@@ -65,7 +65,7 @@ export class AutenticacaoService {
   }
 
   logout(): Observable<any> {
-    const url = `${this.configuracaoSeguranca?.urlBase}${this.configuracaoSeguranca?.pathLogout}`; // Acesso direto às propriedades
+    const url = `${this.configuracaoSeguranca?.urlBaseServicoSSO}${this.configuracaoSeguranca?.pathLogout}`; // Acesso direto às propriedades
     const redirectUri = this.configuracaoSeguranca?.redirectUriPosLogout; // Acesso direto às propriedades
 
     return this.http.post(url, {}).pipe(
@@ -90,9 +90,9 @@ export class AutenticacaoService {
    */
   getUrlLoginSSO(redirectPath: string): string | null {
     // Verifica se os componentes necessários para construir a URL externa estão configurados
-    if (this.configuracaoSeguranca?.urlBase && this.configuracaoSeguranca?.pathLogin) {
+    if (this.configuracaoSeguranca?.urlBaseServicoSSO && this.configuracaoSeguranca?.pathLogin) {
       // 1. Constrói a URL base do SSO
-      const ssoBaseUrl = `${this.configuracaoSeguranca.urlBase}${this.configuracaoSeguranca.pathLogin}`;
+      const ssoBaseUrl = `${this.configuracaoSeguranca.urlBaseServicoSSO}${this.configuracaoSeguranca.pathLogin}`;
       
       // 2. Codifica o URL de retorno
       const encodedRedirectUrl = encodeURIComponent(redirectPath); 
