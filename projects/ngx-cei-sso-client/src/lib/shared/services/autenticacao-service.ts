@@ -1,7 +1,7 @@
 import { Injectable, inject, PLATFORM_ID, Inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, BehaviorSubject, of, throwError } from 'rxjs';
-import { tap, catchError } from 'rxjs/operators';
+import { tap, catchError, finalize } from 'rxjs/operators';
 import { isPlatformBrowser } from '@angular/common'; // Importe a função essencial
 import { CONFIGURACAO_SSO_INJECTION_TOKEN } from '../constants/configuracao-sso-injection-token';
 import { ConfiguracaoSSO } from '../models/configuracao-sso-model';
@@ -47,39 +47,87 @@ export class AutenticacaoService {
 
     const url = `${this.configuracaoSeguranca?.urlBaseServicoSSO}${this.configuracaoSeguranca?.pathLogin}`; // Acesso direto às propriedades
     
-    return this.http.post<any>(url, payloadCredenciais).pipe(
-        tap(resposta => {
-            const token = this.tokenService.extrairToken(resposta); 
-            if (token) {
-                // Chama o método seguro
-                this.tokenService.setToken(token); 
-                this.isAutenticadoSubject.next(true);
-            } else {
-                throw new Error('Token não recebido');
+    return this.http.post<any>(url, payloadCredenciais, { withCredentials: true }).pipe(
+        tap(() => {
+            // Ignoramos o corpo da resposta (token não é mais manipulado aqui).
+            // Apenas atualizamos o BehaviorSubject baseado na existência da Flag/Cookie.
+            const logado = this.tokenService.hasToken();
+            this.isAutenticadoSubject.next(logado);
+            
+            if (!logado) {
+              console.warn('Resposta http 200 encontrada no login, mas o cookie de sessão não foi encontrado.');
             }
         }),
         catchError(error => {
-            return throwError(() => new Error('Login falhou. Credenciais inválidas ou erro no servidor.'));
+            return throwError(() => new Error('Login falhou. Verifique suas credenciais.'));
         })
     );
   }
 
-  logout(): Observable<any> {
-    const url = `${this.configuracaoSeguranca?.urlBaseServicoSSO}${this.configuracaoSeguranca?.pathLogout}`; // Acesso direto às propriedades
-    const redirectUri = this.configuracaoSeguranca?.redirectUriPosLogout; // Acesso direto às propriedades
 
-    return this.http.post(url, {}).pipe(
-      catchError(() => of(null)), 
-      tap(() => {
-        // Chama o método seguro
-        this.tokenService.removeToken(); 
+
+  // ----------------------
+  // Métodos de Autenticação
+  // ----------------------
+
+  // login(credenciais: any): Observable<any> {
+
+  //   const payloadCredenciais = this.mapearPayloadCredenciais(credenciais);
+
+  //   const url = `${this.configuracaoSeguranca?.urlBaseServicoSSO}${this.configuracaoSeguranca?.pathLogin}`; // Acesso direto às propriedades
+    
+  //   return this.http.post<any>(url, payloadCredenciais).pipe(
+  //       tap(resposta => {
+  //           const token = this.tokenService.extrairToken(resposta); 
+  //           if (token) {
+  //               // Chama o método seguro
+  //               this.tokenService.setToken(token); 
+  //               this.isAutenticadoSubject.next(true);
+  //           } else {
+  //               throw new Error('Token não recebido');
+  //           }
+  //       }),
+  //       catchError(error => {
+  //           return throwError(() => new Error('Login falhou. Credenciais inválidas ou erro no servidor.'));
+  //       })
+  //   );
+  // }
+
+
+  // logout(): Observable<any> {
+  //   const url = `${this.configuracaoSeguranca?.urlBaseServicoSSO}${this.configuracaoSeguranca?.pathLogout}`; // Acesso direto às propriedades
+  //   const redirectUri = this.configuracaoSeguranca?.redirectUriPosLogout; // Acesso direto às propriedades
+
+  //   return this.http.post(url, {}).pipe(
+  //     catchError(() => of(null)), 
+  //     tap(() => {
+  //       // Chama o método seguro
+  //       this.tokenService.removeToken(); 
+  //       this.isAutenticadoSubject.next(false);
+        
+  //       // O redirecionamento TAMBÉM é uma operação de navegador!
+  //       if (this.isBrowser) { 
+  //         window.location.href = redirectUri;
+  //       }
+  //     })
+  //   );
+  // }
+
+  logout(): Observable<any> {
+    const url = `${this.configuracaoSeguranca?.urlBaseServicoSSO}${this.configuracaoSeguranca?.pathLogout}`;
+    const redirectUri = this.configuracaoSeguranca?.redirectUriPosLogout;
+
+    return this.http.post(url, {}, { withCredentials: true }).pipe(
+      finalize(() => {
+        // Limpa a flag e atualiza o estado
+        this.tokenService.setDeslogado();
         this.isAutenticadoSubject.next(false);
         
-        // O redirecionamento TAMBÉM é uma operação de navegador!
-        if (this.isBrowser) { 
+        if (typeof window !== 'undefined') {
           window.location.href = redirectUri;
         }
-      })
+      }),
+      catchError(() => of(null))
     );
   }
 

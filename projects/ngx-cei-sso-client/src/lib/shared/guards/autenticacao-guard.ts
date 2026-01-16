@@ -58,6 +58,7 @@ export const autenticacaoGuard: CanActivateFn = (route, state) => {
           if (response) {
             console.log('Server-side: Redirecionando para SSO com status 302.');
             response.redirect(302, ssoLoginUrl);
+            response.end();
           } else {
             // Fallback caso o 'response' não seja injetado corretamente
             console.warn('Server-side: Objeto RESPONSE não encontrado. O redirecionamento SSR não ocorrerá.');
