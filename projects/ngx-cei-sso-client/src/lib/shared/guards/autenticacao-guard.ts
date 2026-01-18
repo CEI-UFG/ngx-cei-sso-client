@@ -15,64 +15,58 @@ export const autenticacaoGuard: CanActivateFn = (route, state) => {
   const autenticacaoService = inject(AutenticacaoService);
   const router = inject(Router);
   const platformId = inject(PLATFORM_ID);
-  // O token RESPONSE é injetado opcionalmente. Ele só existirá no servidor.
-  // A importação real virá de 'express', mas o token é fornecido no app.config.server.ts
   const response: Response | null = inject(RESPONSE, { optional: true });
   const configuracaoSSO = inject(CONFIGURACAO_SSO_INJECTION_TOKEN);
 
-  
+  console.log('autenticacaoGuard: Verificando acesso para a rota:', state.url);
 
   return autenticacaoService.isAutenticado$.pipe(
     map((isAutenticado) => {
       if (isAutenticado) {
-        console.log('Usuário autenticado. Acesso permitido.');
+        console.log('autenticacaoGuard: Usuário autenticado. Acesso permitido.');
         return true;
       }
 
-      // Constrói a URL de redirecionamento completa.
-      let redirectUrl: string;
+      // Constrói a URL de redirecionamento completa para onde o usuário deve voltar.
+      let urlDeRetorno: string;
       if (isPlatformBrowser(platformId)) {
-        // No navegador, a origem (protocolo, host, porta) está disponível em window.location.
-        redirectUrl = window.location.origin + state.url;
+        // No navegador: Usa a origem atual + a URL que o usuário tentou acessar
+        urlDeRetorno = window.location.origin + state.url;
       } else {
-        // No servidor, não temos window.location.
-        // A melhor prática é configurar a URL base da aplicação como uma variável de ambiente.
-        // Por enquanto, vamos usar um placeholder ou uma URL base fixa.
-        redirectUrl = configuracaoSSO.urlBaseAplicacaoCliente + state.url; // Ou uma URL base do environment: `environment.baseUrl + state.url`
+        // No servidor: Usa a URL base configurada no environment
+        urlDeRetorno = (configuracaoSSO.urlBaseAplicacaoCliente || '') + state.url;
       }
-      // Lógica para usuário não autenticado
-      const ssoLoginUrl = autenticacaoService.getUrlLoginSSO(redirectUrl);
+      
+      console.log('autenticacaoGuard: URL de retorno preparada:', urlDeRetorno);
+
+      // Obtém a URL do serviço de SSO externo passando a nossa URL de retorno como parâmetro
+      const ssoLoginUrl = autenticacaoService.getUrlLoginSSO(urlDeRetorno);
 
       if (ssoLoginUrl) {
-        console.log('URL de redirecionamento identificada: ' + redirectUrl);
-        console.log('Usuário não autenticado. Redirecionando para SSO.');
-        console.log(`URL de login SSO: ${ssoLoginUrl}`);
-        // FLUXO DE REDIRECIONAMENTO PARA SSO
+        console.log('autenticacaoGuard: Redirecionando para SSO Externo:', ssoLoginUrl);
+        
         if (isPlatformBrowser(platformId)) {
-          // No navegador: redireciona usando window.location
-          console.log('Client-side: Redirecionando para SSO.');
+          console.log('autenticacaoGuard [Browser]: window.location.href =', ssoLoginUrl);
           window.location.href = ssoLoginUrl;
-          return false; // Interrompe a navegação do Angular
+          return false; 
         } else {
-          // No servidor: usa o objeto de resposta do Express para enviar um status 302
           if (response) {
-            console.log('Server-side: Redirecionando para SSO com status 302.');
+            console.log('autenticacaoGuard [Server]: Redirecionando via Express 302');
             response.redirect(302, ssoLoginUrl);
             response.end();
           } else {
-            // Fallback caso o 'response' não seja injetado corretamente
-            console.warn('Server-side: Objeto RESPONSE não encontrado. O redirecionamento SSR não ocorrerá.');
+            console.warn('autenticacaoGuard [Server]: Objeto RESPONSE não encontrado no SSR.');
           }
-          return false; // Interrompe a navegação do Angular
+          return false;
         }
       } else {
-        // FLUXO DE FALLBACK (sem ssoLoginUrl)
-        // Redireciona para a página de login interna da aplicação
-        console.log('Fallback: Redirecionando para a página de login interna.');
+        // Fallback para login interno caso o SSO não esteja configurado
+        console.log('autenticacaoGuard: SSO não configurado. Redirecionando para login interno.');
         return router.createUrlTree(['/login'], {
           queryParams: {
-            redirect_url: state.url,
+            redirect_url: urlDeRetorno,
           },
+          queryParamsHandling: 'merge' // Mantém outros parâmetros existentes
         });
       }
     })
