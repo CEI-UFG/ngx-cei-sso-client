@@ -4,9 +4,9 @@
   "compileOnSave": false,
   "compilerOptions": {
     "paths": {
-      // "ngx-cei-sso-client": [
-      //   "./dist/ngx-cei-sso-client"
-      // ],
+      "ngx-cei-sso-client": [
+        "./dist/ngx-cei-sso-client"
+      ],
     
     },
     "strict": true,
