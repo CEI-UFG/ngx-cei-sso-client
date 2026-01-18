@@ -1,104 +1,91 @@
-import { Injectable, inject, PLATFORM_ID } from '@angular/core';
+import { Injectable, inject, PLATFORM_ID, Inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, BehaviorSubject, of, throwError } from 'rxjs';
-import { tap, catchError } from 'rxjs/operators';
-import { isPlatformBrowser } from '@angular/common'; // Importe a função essencial
-import { ConfiguracaoSegurancaService } from '../configuracao-seguranca-service';
+import { tap, catchError, finalize } from 'rxjs/operators';
+import { isPlatformBrowser } from '@angular/common'; 
+import { CONFIGURACAO_SSO_INJECTION_TOKEN } from '../constants/configuracao-sso-injection-token';
+import { ConfiguracaoSSO } from '../models/configuracao-sso-model';
+import { TOKEN_SERVICE_INJECTION_TOKEN } from '../constants/token-service-injection-token';
+import { CREDENCIAIS_PAYLOAD_INJECTION_TOKEN } from '../constants/credenciais-payload-injection-token';
+import { CredenciaisPayLoad } from '../types/credenciais-payload';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AutenticacaoService {
-  // Use 'inject()' para obter as dependências de plataforma e serviços
   private readonly platformId = inject(PLATFORM_ID);
   private readonly http = inject(HttpClient);
-  private readonly configuracaoSegurancaService = inject(ConfiguracaoSegurancaService); // Novo serviço injetado
-  
-  // Variável para checar se estamos no navegador (resultado cacheado)
   private readonly isBrowser = isPlatformBrowser(this.platformId);
+  private readonly tokenService = inject(TOKEN_SERVICE_INJECTION_TOKEN);
   
-  // Use 'window.localStorage' diretamente, mas APENAS APÓS verificar 'isBrowser'
-  // (Note que 'localStorage' é uma global no navegador e não precisa ser injetada se
-  // o acesso for sempre protegido pela verificação de plataforma)
-
-  private isAutenticadoSubject = new BehaviorSubject<boolean>(this.hasToken());
+  private isAutenticadoSubject = new BehaviorSubject<boolean>(this.tokenService.hasToken());
   public isAutenticado$ = this.isAutenticadoSubject.asObservable();
 
-  // O construtor é simplificado pois usamos 'inject()' para as dependências
-  constructor() { }
-
-  // ----------------------
-  // Métodos de LocalStorage
-  // ----------------------
-
-  private hasToken(): boolean {
-    if (this.isBrowser) {
-      // Acessa localStorage APENAS se estiver no navegador
-      return localStorage?.getItem('auth_token') !== null;
-    }
-    // No servidor (SSR), o token nunca existe
-    return false;
+  constructor(
+    @Inject(CONFIGURACAO_SSO_INJECTION_TOKEN) private configuracaoSeguranca: ConfiguracaoSSO,
+    @Inject(CREDENCIAIS_PAYLOAD_INJECTION_TOKEN) private mapearPayloadCredenciais: CredenciaisPayLoad
+  ) { 
+    console.log('AutenticacaoService: Inicializado. Estado inicial autenticado:', this.tokenService.hasToken());
   }
 
-  getToken(): string | null {
-    if (this.isBrowser) {
-      return localStorage?.getItem('auth_token');
-    }
-    return null;
-  }
-
-  private setToken(token: string): void {
-    if (this.isBrowser) {
-      localStorage?.setItem('auth_token', token);
-    }
-  }
-
-  private removeToken(): void {
-    if (this.isBrowser) {
-      localStorage?.removeItem('auth_token');
-    }
-  }
-
-  // ----------------------
-  // Métodos de Autenticação
-  // ----------------------
-
-  login(credentials: any): Observable<any> {
-    const url = `${this.configuracaoSegurancaService.getUrlBase()}${this.configuracaoSegurancaService.getUrlLogin()}`;
-
-    return this.http.post<{ token: string }>(url, credentials).pipe(
-        tap(response => {
-            const token = response.token; 
-            if (token) {
-                // Chama o método seguro
-                this.setToken(token); 
-                this.isAutenticadoSubject.next(true);
-            } else {
-                throw new Error('Token não recebido');
-            }
+  login(credenciais: any): Observable<any> {
+    console.log('AutenticacaoService: Tentando realizar login...');
+    const payloadCredenciais = this.mapearPayloadCredenciais(credenciais);
+    const url = `${this.configuracaoSeguranca?.urlBaseServicoSSO}${this.configuracaoSeguranca?.pathLogin}`; 
+    
+    return this.http.post<any>(url, payloadCredenciais, { withCredentials: true }).pipe(
+        tap(() => {
+            const logado = this.tokenService.hasToken();
+            console.log('AutenticacaoService: Login bem-sucedido. Cookie de flag presente:', logado);
+            this.isAutenticadoSubject.next(logado);
         }),
         catchError(error => {
-            return throwError(() => new Error('Login falhou. Credenciais inválidas ou erro no servidor.'));
+            console.error('AutenticacaoService: Erro na requisição de login:', error);
+            return throwError(() => new Error('Login falhou. Verifique suas credenciais.'));
         })
     );
   }
 
   logout(): Observable<any> {
-    const url = `${this.configuracaoSegurancaService.getUrlBase()}${this.configuracaoSegurancaService.getUrlLogout()}`;
-    const redirectUri = this.configuracaoSegurancaService.getRedirectUriPosLogout();
-    
-    return this.http.post(url, {}).pipe(
-      catchError(() => of(null)), 
-      tap(() => {
-        // Chama o método seguro
-        this.removeToken(); 
+    console.log('AutenticacaoService: Iniciando logout...');
+    const url = `${this.configuracaoSeguranca?.urlBaseServicoSSO}${this.configuracaoSeguranca?.pathLogout}`;
+    const redirectUri = this.configuracaoSeguranca?.redirectUriPosLogout;
+
+    return this.http.post(url, {}, { withCredentials: true }).pipe(
+      finalize(() => {
+        console.log('AutenticacaoService: Limpando estado de autenticação local.');
+        this.tokenService.setDeslogado();
         this.isAutenticadoSubject.next(false);
         
-        // O redirecionamento TAMBÉM é uma operação de navegador!
-        if (this.isBrowser) { 
+        if (typeof window !== 'undefined') {
+          console.log('AutenticacaoService: Redirecionando após logout para:', redirectUri);
           window.location.href = redirectUri;
         }
+      }),
+      catchError(error => {
+        console.error('AutenticacaoService: Erro durante o logout, procedendo com limpeza local.', error);
+        return of(null);
       })
     );
+  }
+
+  /**
+   * Constrói o URL completo de redirecionamento para o SSO externo.
+   */
+  getUrlLoginSSO(urlDeRetorno: string): string | null {
+    if (this.configuracaoSeguranca?.urlBaseServicoSSO && this.configuracaoSeguranca?.pathLogin) {
+      const ssoBaseUrl = `${this.configuracaoSeguranca.urlBaseServicoSSO}${this.configuracaoSeguranca.pathLogin}`;
+      
+      // IMPORTANTE: encodeURIComponent garante que caracteres como ':' e '/' na URL de retorno 
+      // não sejam interpretados como parte da URL do SSO.
+      const encodedRedirectUrl = encodeURIComponent(urlDeRetorno); 
+
+      const finalUrl = `${ssoBaseUrl}?redirect_url=${encodedRedirectUrl}`;
+      console.log('AutenticacaoService: URL de SSO gerada:', finalUrl);
+      return finalUrl;
+    }
+    
+    console.warn('AutenticacaoService: Configuração de SSO incompleta para gerar URL de login.');
+    return null; 
   }
 }
